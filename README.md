@@ -16,7 +16,7 @@ El flujo de trabajo sigue el patrón de Agente y Herramienta (Tool Use):
 
 ## 📁 Estructura del Proyecto
 
-retail-agent-backend/ ├── template.yaml # Define la infraestructura (Lambda, DynamoDB, API Gateway, IAM) ├── src/ │ ├── agent.py # Lógica principal, Tool Definition, Bedrock calls. │ └── load_data.py # Función para cargar datos iniciales de prueba. ├── requirements.txt # Dependencias de Python. └── README.md # Documentación del proyecto.
+´´´retail-agent-backend/ ├── template.yaml # Define la infraestructura (Lambda, DynamoDB, API Gateway, IAM) ├── src/ │ ├── agent.py # Lógica principal, Tool Definition, Bedrock calls. │ └── load_data.py # Función para cargar datos iniciales de prueba. ├── requirements.txt # Dependencias de Python. └── README.md # Documentación del proyecto.´´´
 
 
 ## 🚀 Despliegue y Uso
