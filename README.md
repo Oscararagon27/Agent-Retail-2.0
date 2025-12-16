@@ -16,7 +16,17 @@ El flujo de trabajo sigue el patrón de Agente y Herramienta (Tool Use):
 
 ## 📁 Estructura del Proyecto
 
-´´´retail-agent-backend/ ├── template.yaml # Define la infraestructura (Lambda, DynamoDB, API Gateway, IAM) ├── src/ │ ├── agent.py # Lógica principal, Tool Definition, Bedrock calls. │ └── load_data.py # Función para cargar datos iniciales de prueba. ├── requirements.txt # Dependencias de Python. └── README.md # Documentación del proyecto.´´´
+Esta es la estructura de archivos del proyecto serverless:
+
+| Archivo/Directorio | Propósito |
+| :--- | :--- |
+| **`retail-agent-backend/`** | Directorio raíz del proyecto Serverless. |
+| **`template.yaml`** | Define la infraestructura completa (SAM/CloudFormation): Lambdas, DynamoDB, API Gateway, y permisos IAM. |
+| **`src/`** | Contiene el código fuente de las funciones Lambda. |
+| `src/agent.py` | Lógica principal del agente: gestión de la API de Bedrock y el flujo de Tool Use. |
+| `src/load_data.py` | Función de utilidad para cargar datos iniciales de inventario en DynamoDB. |
+| **`requirements.txt`** | Dependencias de Python (`boto3`, etc.) necesarias para las funciones Lambda. |
+| **`README.md`** | Documentación del proyecto. |
 
 
 ## 🚀 Despliegue y Uso
