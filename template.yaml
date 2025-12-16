@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Agente IA Retail - Backend con Bedrock y DynamoDB
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.12
+    Environment:
+      Variables:
+        INVENTORY_TABLE: !Ref InventoryTable
+
+Resources:
+  # ----------------------------------------------------------------------
+  # 1. DynamoDB Table for Inventory Data
+  # ----------------------------------------------------------------------
+  InventoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: RetailInventory
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      KeySchema:
+        - AttributeName: product_id
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: product_id
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+      # Global Secondary Index (GSI) para búsquedas por categoría (Bedrock lo necesitará)
+      GlobalSecondaryIndexes:
+        - IndexName: CategoryIndex
+          KeySchema:
+            - AttributeName: category
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+
+  # ----------------------------------------------------------------------
+  # 4. API Gateway (Definición de la API Base)
+  # ----------------------------------------------------------------------
+  RetailApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      OpenApiVersion: 3.0.1
+
+  # ----------------------------------------------------------------------
+  # 2. Agent Function (Bedrock + DynamoDB Query)
+  # ----------------------------------------------------------------------
+  AgentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: agent.lambda_handler
+      CodeUri: src/
+      Policies:
+        # Permite leer de la tabla de inventario (DynamoDB)
+        - DynamoDBReadPolicy:
+            TableName: !Ref InventoryTable
+        # *** POLÍTICA CONSOLIDADA (Bedrock + Marketplace) ***
+        - Statement:
+            Effect: Allow
+            Action:
+              # Permisos de Bedrock para invocar el modelo
+              - bedrock:InvokeModel
+              # Permisos de Marketplace necesarios para la verificación de suscripción
+              - aws-marketplace:ViewSubscriptions
+              - aws-marketplace:Subscribe
+            Resource:
+              # Recurso específico del modelo de Bedrock (¡CAMBIADO A HAIKU!)
+              - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0'
+              # Recurso wildcard (*) para las acciones de Marketplace
+              - "*" 
+        # **************************************************
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /agent
+            Method: post
+            RestApiId: !Ref RetailApi
+
+  # ----------------------------------------------------------------------
+  # 3. Data Loading Function
+  # ----------------------------------------------------------------------
+  LoadDataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: load_data.lambda_handler
+      CodeUri: src/
+      Policies:
+        # Permite escribir y leer de la tabla de inventario
+        - DynamoDBCrudPolicy:
+            TableName: !Ref InventoryTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /load
+            Method: post
+            RestApiId: !Ref RetailApi
+            
+Outputs:
+  RetailApiUrl:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${RetailApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
